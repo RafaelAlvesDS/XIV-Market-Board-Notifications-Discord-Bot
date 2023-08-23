@@ -22,16 +22,19 @@ module.exports = {
         const homeServer = interaction.options.getString('home-server');
         // const retainer = interaction.options.getString('retainer');
         const apiUrl = 'https://universalis.app/api/v2/' + homeServer + '/' + itemID + '?listings=1&entries=0&noGst=1';
-        axios.get(apiUrl)
-            .then(response => {
-                // Handle the JSON response here
+
+        async function fetchData() {
+            try {
+                const response = await axios.get(apiUrl);
                 const data = response.data;
+                await interaction.reply(JSON.stringify(data));
                 console.log(data);
-                interaction.reply(JSON.stringify(data));
-            })
-            .catch(error => {
+            }
+            catch (error) {
                 console.error('Error making API request:', error);
-            });
-		await interaction.reply('Mandei no privado');
+                await interaction.reply('Deu Ruim!');
+            }
+        }
+        fetchData();
 	},
 };
