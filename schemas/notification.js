@@ -7,6 +7,7 @@ const notificationSchema = new mg.Schema({
     homeServer: String,
     retainer: String,
     notified: Boolean,
+    listings: Number,
 });
 
 module.exports = mg.model('Notification', notificationSchema);

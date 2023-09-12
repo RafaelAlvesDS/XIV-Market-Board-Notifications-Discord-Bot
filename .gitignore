@@ -132,3 +132,6 @@ dist
 #bot token
 config.json
 .env
+
+#.bat to run bot
+RUN BOT.bat

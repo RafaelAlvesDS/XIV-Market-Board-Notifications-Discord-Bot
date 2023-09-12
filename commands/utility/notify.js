@@ -36,6 +36,7 @@ module.exports = {
                     homeServer: homeServer,
                     retainer: retainer,
                     notified: false,
+                    listings: 0,
                 });
                 await interaction.reply('Tá salvo!');
             }
