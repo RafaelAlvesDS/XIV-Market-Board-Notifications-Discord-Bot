@@ -18,7 +18,7 @@ module.exports = {
             if (data.length > 0) {
                 let message = '';
                 data.forEach(async function(dataItem) {
-                    message += 'Retainer: ' + dataItem.retainer + ' | Item ID: ' + dataItem.itemID + ' | Home Server: ' + dataItem.homeServer + '\n' ;
+                    message += 'Retainer: ' + dataItem.retainer + ' | Item ID: [' + dataItem.itemID + '](https://universalis.app/market/' + dataItem.itemID + ') | Home Server: ' + dataItem.homeServer + ' | Listings: ' + dataItem.listings + '\n' ;
                 });
                 console.log(message);
                 await interaction.reply(message);
