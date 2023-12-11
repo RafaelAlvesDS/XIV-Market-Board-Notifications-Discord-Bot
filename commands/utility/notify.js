@@ -1,5 +1,6 @@
 const { SlashCommandBuilder } = require('discord.js');
 const notificationSchema = require('../../schemas/notification');
+const retainerSchema = require('../../schemas/retainers');
 const itemsIds = require('../../items');
 
 module.exports = {
@@ -14,7 +15,8 @@ module.exports = {
         .addStringOption(option =>
             option.setName('retainer')
                 .setDescription('The name of the retainer selling the item')
-                .setRequired(true))
+                .setRequired(true)
+                .setAutocomplete(true))
         .addStringOption(option =>
             option.setName('home-server')
                 .setDescription('The name of your home server. Ex: Behemoth')
@@ -40,6 +42,17 @@ module.exports = {
             await interaction.respond(
                 filtered.map(choice => ({ name: choice, value: choice })),
             );
+        }
+        if (focusedOption.name === 'retainer') {
+            // choices = itemsIds;
+            choices = await retainerSchema.find({ userID:interaction.user.id });
+            // console.log(choices);
+            filtered = choices.filter(choice => choice.retainerName.includes(focusedOption.value)).slice(0, 25);
+
+            await interaction.respond(
+                filtered.map(choice => ({ name: choice.retainerName, value: choice.retainerName })),
+            );
+
         }
 
     },

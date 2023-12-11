@@ -36,6 +36,7 @@ module.exports = {
 									}
 								}
 								// avisa o usuario que ele vendeu um item no mercado
+
 								if (matchingListings.length < dataItem.listings) {
 									channel.send({ content: '<@' + dataItem.userID + '> Um item foi vendido no mercado: https://universalis.app/market/' + dataItem.itemID });
 									try {
@@ -45,6 +46,7 @@ module.exports = {
 										console.log(error);
 									}
 								}
+
 								// avisa o usuario que alguem cobriu o preço dele no mercado
 								if (responseData.listings[0].retainerName != dataItem.retainer && dataItem.notified == false && matchingListings.length > 0) {
 									channel.send({ content: '<@' + dataItem.userID + '> Anunciaram mais barato que você o item: https://universalis.app/market/' + dataItem.itemID });
