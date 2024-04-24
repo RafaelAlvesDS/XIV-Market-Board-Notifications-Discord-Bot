@@ -34,7 +34,7 @@ module.exports = {
             // choices = itemsIds;
             choices = await retainerSchema.find({ userID:interaction.user.id });
             // console.log(choices);
-            filtered = choices.filter(choice => choice.retainerName.includes(focusedOption.value)).slice(0, 25);
+            filtered = choices.filter(choice => choice.retainerName.toLowerCase().includes(focusedOption.value)).slice(0, 25);
 
             await interaction.respond(
                 filtered.map(choice => ({ name: choice.retainerName, value: choice.retainerName })),
