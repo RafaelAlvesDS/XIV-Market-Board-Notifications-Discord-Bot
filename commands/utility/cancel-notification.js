@@ -20,8 +20,29 @@ module.exports = {
         const focusedOption = interaction.options.getFocused(true);
         let choices;
         let filtered;
+        const listings = [];
+
         if (focusedOption.name === 'item-id') {
-            choices = itemsIds;
+            try {
+                const data = await notificationSchema.find({
+                    userID: interaction.user.id,
+                });
+                // console.log(data);
+                if (data.length > 0) {
+                    // let filtered;
+                    let listingObj = {};
+                    data.forEach(async function(dataItem) {
+                        filtered = itemsIds.filter(choice => choice.id == dataItem.itemID);
+                        listingObj = { id: dataItem.itemID, en: filtered[0].en };
+                        listings.push(listingObj);
+                    });
+                    console.log(listings);
+                }
+            }
+            catch (error) {
+                console.log(error);
+            }
+            choices = listings;
             // console.log(choices);
             filtered = choices.filter(choice => choice.en.toLowerCase().includes(focusedOption.value.toLowerCase())).slice(0, 25);
 
