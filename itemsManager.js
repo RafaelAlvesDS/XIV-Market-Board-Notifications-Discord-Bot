@@ -13,10 +13,10 @@ class ItemsManager {
     async loadItems() {
         try {
             console.log('Carregando dados de itens...');
-            
+
             // Primeiro tenta baixar do GitHub
             await this.downloadItems();
-            
+
             // Se não conseguir baixar, tenta carregar do arquivo local
             if (!fs.existsSync(this.jsonPath)) {
                 console.warn('Arquivo items.json não encontrado. Criando arquivo vazio...');
@@ -29,7 +29,7 @@ class ItemsManager {
             // Carrega os dados do arquivo
             const data = fs.readFileSync(this.jsonPath, 'utf8');
             this.items = JSON.parse(data);
-            
+
             // Converte para array para facilitar o uso no autocomplete
             this.itemsArray = Object.keys(this.items).map(id => ({
                 id: parseInt(id),
@@ -51,13 +51,13 @@ class ItemsManager {
             const response = await axios.get(this.apiUrl, {
                 timeout: 30000,
             });
-            
+
             fs.writeFileSync(this.jsonPath, JSON.stringify(response.data, null, 2));
             console.log('Dados de itens baixados e salvos com sucesso!');
         }
         catch (error) {
             console.warn('Não foi possível baixar os dados de itens do GitHub:', error.message);
-            
+
             // Se existir um arquivo local, usa ele
             if (fs.existsSync(this.jsonPath)) {
                 console.log('Usando dados de itens do arquivo local...');
