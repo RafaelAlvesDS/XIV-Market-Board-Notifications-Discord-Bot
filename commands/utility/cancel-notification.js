@@ -1,7 +1,7 @@
 const { SlashCommandBuilder } = require('discord.js');
 const notificationSchema = require('../../schemas/notification');
 const retainerSchema = require('../../schemas/retainers');
-const itemsIds = require('../../items');
+const itemsManager = require('../../itemsManager');
 module.exports = {
 	data: new SlashCommandBuilder()
 		.setName('cancel-notification')
@@ -32,8 +32,8 @@ module.exports = {
                     // let filtered;
                     let listingObj = {};
                     data.forEach(async function(dataItem) {
-                        filtered = itemsIds.filter(choice => choice.id == dataItem.itemID);
-                        listingObj = { id: dataItem.itemID, en: filtered[0].en };
+                        const itemName = itemsManager.getItemName(dataItem.itemID);
+                        listingObj = { id: dataItem.itemID, en: itemName };
                         listings.push(listingObj);
                     });
                     console.log(listings);
@@ -52,7 +52,6 @@ module.exports = {
 
         }
         if (focusedOption.name === 'retainer') {
-            // choices = itemsIds;
             choices = await retainerSchema.find({ userID:interaction.user.id });
             // console.log(choices);
             filtered = choices.filter(choice => choice.retainerName.toLowerCase().includes(focusedOption.value)).slice(0, 25);

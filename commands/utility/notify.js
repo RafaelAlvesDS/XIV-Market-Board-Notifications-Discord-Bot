@@ -1,7 +1,7 @@
 const { SlashCommandBuilder } = require('discord.js');
 const notificationSchema = require('../../schemas/notification');
 const retainerSchema = require('../../schemas/retainers');
-const itemsIds = require('../../items');
+const itemsManager = require('../../itemsManager');
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -27,7 +27,7 @@ module.exports = {
         let choices;
         let filtered;
         if (focusedOption.name === 'item-id') {
-            choices = itemsIds;
+            choices = itemsManager.getAllItems();
             // console.log(choices);
             filtered = choices.filter(choice => choice.en.toLowerCase().includes(focusedOption.value.toLowerCase())).slice(0, 25);
 
@@ -44,7 +44,6 @@ module.exports = {
             );
         }
         if (focusedOption.name === 'retainer') {
-            // choices = itemsIds;
             choices = await retainerSchema.find({ userID:interaction.user.id });
             // console.log(choices);
             filtered = choices.filter(choice => choice.retainerName.toLowerCase().includes(focusedOption.value)).slice(0, 25);

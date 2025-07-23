@@ -4,6 +4,7 @@ const path = require('node:path');
 const { Client, Collection, GatewayIntentBits } = require('discord.js');
 const dotenv = require('dotenv');
 const mg = require('mongoose');
+const itemsManager = require('./itemsManager');
 
 // Create new instances
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
@@ -48,4 +49,7 @@ for (const file of eventFiles) {
 
 // Log in to Discord with your client's token
 client.login(process.env.DISCORD_TOKEN);
+
+// Initialize items data
+itemsManager.loadItems().catch(console.error);
 mg.connect(process.env.MONGODB_CONN).then(() => console.log('MongoDB conectado com sucesso!'));

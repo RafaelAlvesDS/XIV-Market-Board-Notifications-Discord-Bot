@@ -9,6 +9,7 @@ Um bot do Discord para notificações do Market Board do Final Fantasy XIV. Este
 - **Autocompletar**: Interface amigável com autocompletar para itens, servidores e retainers
 - **Múltiplos Retainers**: Suporte para múltiplos retainers por usuário
 - **Monitoramento Automático**: Verificação automática a cada 5 minutos
+- **Dados Atualizados**: Downloads automáticos da base de dados de itens mais recente do FFXIV Teamcraft
 
 ## 📋 Comandos Disponíveis
 
@@ -84,6 +85,15 @@ ou use o arquivo batch:
 "RUN BOT.bat"
 ```
 
+### Atualização Manual dos Dados de Itens
+
+Para atualizar manualmente a base de dados de itens:
+```bash
+node update-items.js
+```
+
+> **Nota**: Os dados de itens são baixados automaticamente quando o bot inicia. O comando acima é apenas para atualizações manuais.
+
 ### Estrutura do Projeto
 
 ```
@@ -102,8 +112,9 @@ ou use o arquivo batch:
 │   ├── retainers.js         # Schema dos retainers
 │   └── listing.js           # Schema das listagens
 ├── config.json              # Configurações do bot
-├── items.js                 # Base de dados de itens
-├── items.json              # Dados dos itens em JSON
+├── itemsManager.js          # Gerenciador da base de dados de itens
+├── items.json              # Cache local dos dados de itens
+├── update-items.js         # Script para atualização manual dos itens
 └── package.json
 ```
 
@@ -120,21 +131,29 @@ ou use o arquivo batch:
 
 ## 📊 Funcionamento
 
-1. **Registro**: Usuários registram seus retainers usando `/register-retainer`
-2. **Configuração**: Usuários configuram notificações com `/notify`
-3. **Monitoramento**: O bot verifica a API do Universalis a cada 5 minutos
-4. **Notificações**: O bot envia mensagens quando:
+1. **Inicialização**: O bot baixa automaticamente a base de dados de itens mais recente do [FFXIV Teamcraft](https://github.com/ffxiv-teamcraft/ffxiv-teamcraft)
+2. **Registro**: Usuários registram seus retainers usando `/register-retainer`
+3. **Configuração**: Usuários configuram notificações com `/notify`
+4. **Monitoramento**: O bot verifica a API do Universalis a cada 5 minutos
+5. **Notificações**: O bot envia mensagens quando:
    - Alguém lista um item mais barato
    - Um item é vendido
    - Novos itens são adicionados ao mercado
 
-## 🌐 API Externa
+## 🌐 APIs Externas
 
-Este bot utiliza a [API do Universalis](https://universalis.app/) para obter dados do Market Board do FFXIV.
+Este bot utiliza as seguintes APIs:
 
-**Endpoint utilizado:**
+### Universalis API
+Para obter dados do Market Board do FFXIV:
 ```
 https://universalis.app/api/v2/{servidor}/{itemID}?&entries=0&noGst=1
+```
+
+### FFXIV Teamcraft
+Para obter a base de dados de itens atualizada:
+```
+https://raw.githubusercontent.com/ffxiv-teamcraft/ffxiv-teamcraft/master/libs/data/src/lib/json/items.json
 ```
 
 ## 📝 Schemas do Banco de Dados
