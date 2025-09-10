@@ -1,6 +1,6 @@
-# FFXIV Market Board Discord Bot
+# XIV Market Board Discord Bot
 
-Um bot do Discord para notificações do Market Board do Final Fantasy XIV. Este bot monitora preços de itens no Market Board e notifica os usuários quando alguém oferece um preço mais baixo que o seu ou quando seus itens são vendidos.
+Um bot do Discord para notificações do Market Board do XIV. Este bot monitora preços de itens no Market Board e notifica os usuários quando alguém oferece um preço mais baixo que o seu ou quando seus itens são vendidos.
 
 ## 🎯 Funcionalidades
 
@@ -9,7 +9,7 @@ Um bot do Discord para notificações do Market Board do Final Fantasy XIV. Este
 - **Autocompletar**: Interface amigável com autocompletar para itens, servidores e retainers
 - **Múltiplos Retainers**: Suporte para múltiplos retainers por usuário
 - **Monitoramento Automático**: Verificação automática a cada 5 minutos
-- **Dados Atualizados**: Downloads automáticos da base de dados de itens mais recente do FFXIV Teamcraft
+- **Dados Atualizados**: Downloads automáticos da base de dados de itens mais recente do Teamcraft
 
 ## 📋 Comandos Disponíveis
 
@@ -131,7 +131,7 @@ node update-items.js
 
 ## 📊 Funcionamento
 
-1. **Inicialização**: O bot baixa automaticamente a base de dados de itens mais recente do [FFXIV Teamcraft](https://github.com/ffxiv-teamcraft/ffxiv-teamcraft)
+1. **Inicialização**: O bot baixa automaticamente a base de dados de itens mais recente do [Teamcraft](https://github.com/ffxiv-teamcraft/ffxiv-teamcraft)
 2. **Registro**: Usuários registram seus retainers usando `/register-retainer`
 3. **Configuração**: Usuários configuram notificações com `/notify`
 4. **Monitoramento**: O bot verifica a API do Universalis a cada 5 minutos
@@ -145,12 +145,12 @@ node update-items.js
 Este bot utiliza as seguintes APIs:
 
 ### Universalis API
-Para obter dados do Market Board do FFXIV:
+Para obter dados do Market Board do XIV market:
 ```
 https://universalis.app/api/v2/{servidor}/{itemID}?&entries=0&noGst=1
 ```
 
-### FFXIV Teamcraft
+### Teamcraft
 Para obter a base de dados de itens atualizada:
 ```
 https://raw.githubusercontent.com/ffxiv-teamcraft/ffxiv-teamcraft/master/libs/data/src/lib/json/items.json
