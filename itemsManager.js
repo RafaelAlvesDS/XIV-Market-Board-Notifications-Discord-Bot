@@ -8,41 +8,58 @@ class ItemsManager {
         this.itemsArray = [];
         this.jsonPath = path.join(__dirname, 'items.json');
         this.apiUrl = 'https://raw.githubusercontent.com/ffxiv-teamcraft/ffxiv-teamcraft/master/libs/data/src/lib/json/items.json';
+        this.loadingPromise = null;
     }
 
     async loadItems() {
-        try {
-            console.log('Carregando dados de itens...');
+        if (this.itemsArray.length > 0) {
+            console.log('Itens já carregados.');
+            return;
+        }
 
-            // Primeiro tenta baixar do GitHub
-            await this.downloadItems();
+        if (this.loadingPromise) {
+            console.log('Aguardando carregamento de itens em andamento...');
+            return this.loadingPromise;
+        }
 
-            // Se não conseguir baixar, tenta carregar do arquivo local
-            if (!fs.existsSync(this.jsonPath)) {
-                console.warn('Arquivo items.json não encontrado. Criando arquivo vazio...');
-                fs.writeFileSync(this.jsonPath, '{}');
+        this.loadingPromise = (async () => {
+            try {
+                console.log('Carregando dados de itens...');
+
+                // Primeiro tenta baixar do GitHub
+                await this.downloadItems();
+
+                // Se não conseguir baixar, tenta carregar do arquivo local
+                if (!fs.existsSync(this.jsonPath)) {
+                    console.warn('Arquivo items.json não encontrado. Criando arquivo vazio...');
+                    fs.writeFileSync(this.jsonPath, '{}');
+                    this.items = {};
+                    this.itemsArray = [];
+                    return;
+                }
+
+                // Carrega os dados do arquivo de forma assíncrona
+                const data = await fs.promises.readFile(this.jsonPath, 'utf8');
+                this.items = JSON.parse(data);
+
+                // Converte para array para facilitar o uso no autocomplete
+                this.itemsArray = Object.keys(this.items).map(id => ({
+                    id: parseInt(id),
+                    en: this.items[id]?.en || `Item ${id}`,
+                })).filter(item => item.en && item.en !== '');
+
+                console.log(`${this.itemsArray.length} itens carregados com sucesso!`);
+            }
+            catch (error) {
+                console.error('Erro ao carregar itens:', error);
                 this.items = {};
                 this.itemsArray = [];
-                return;
+            } finally {
+                this.loadingPromise = null;
             }
+        })();
 
-            // Carrega os dados do arquivo
-            const data = fs.readFileSync(this.jsonPath, 'utf8');
-            this.items = JSON.parse(data);
-
-            // Converte para array para facilitar o uso no autocomplete
-            this.itemsArray = Object.keys(this.items).map(id => ({
-                id: parseInt(id),
-                en: this.items[id]?.en || `Item ${id}`,
-            })).filter(item => item.en && item.en !== '');
-
-            console.log(`${this.itemsArray.length} itens carregados com sucesso!`);
-        }
-        catch (error) {
-            console.error('Erro ao carregar itens:', error);
-            this.items = {};
-            this.itemsArray = [];
-        }
+        return this.loadingPromise;
     }
 
     async downloadItems() {

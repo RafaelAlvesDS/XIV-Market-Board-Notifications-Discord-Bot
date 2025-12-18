@@ -1,218 +1,147 @@
 # XIV Market Board Discord Bot
 
-Um bot do Discord para notificações do Market Board do XIV. Este bot monitora preços de itens no Market Board e notifica os usuários em tempo real quando alguém oferece um preço mais baixo que o seu ou quando seus itens são vendidos.
+![Node.js Version](https://img.shields.io/badge/node-%3E%3D16.0.0-brightgreen)
+![Discord.js Version](https://img.shields.io/badge/discord.js-v14-blue)
+![License](https://img.shields.io/badge/license-ISC-yellow)
+![Status](https://img.shields.io/badge/status-active-success)
 
-## 🎯 Funcionalidades
+Um bot do Discord robusto e em tempo real para monitoramento do Market Board do Final Fantasy XIV. Utilizando a API do Universalis via WebSocket, este bot oferece notificações instantâneas sobre undercuts (preços menores) e vendas realizadas, ajudando jogadores a maximizarem seus lucros no jogo.
 
-- **Notificações em Tempo Real**: Receba alertas instantâneos via WebSocket quando alguém colocar um item mais barato que o seu.
-- **Notificações de Vendas**: Seja notificado quando seus itens forem vendidos.
-- **Autocompletar**: Interface amigável com autocompletar para itens, servidores e retainers.
-- **Múltiplos Retainers**: Suporte para múltiplos retainers por usuário.
-- **Monitoramento Inteligente**: 
-  - Diferencia itens HQ (High Quality) de NQ (Normal Quality).
-  - Evita notificações duplicadas.
-  - Sincronização automática de estoque.
-- **Dados Atualizados**: Downloads automáticos da base de dados de itens mais recente do Teamcraft.
+## 📋 Índice
 
-## 📋 Comandos Disponíveis
+- [Funcionalidades](#-funcionalidades)
+- [Arquitetura](#-arquitetura)
+- [Pré-requisitos](#-pré-requisitos)
+- [Instalação](#-instalação)
+- [Configuração](#-configuração)
+- [Uso](#-uso)
+- [Comandos](#-comandos)
+- [Estrutura do Projeto](#-estrutura-do-projeto)
+- [Contribuição](#-contribuição)
+- [Licença](#-licença)
 
-### `/notify`
-Configura uma notificação para um item específico.
+## 🚀 Funcionalidades
 
-**Parâmetros:**
-- `item-id`: ID do item (com autocompletar)
-- `retainer`: Nome do retainer que está vendendo o item
-- `home-server`: Servidor home (ex: Behemoth)
+- **📡 Monitoramento em Tempo Real**: Utiliza WebSockets para receber atualizações de mercado instantaneamente, sem delay de polling.
+- **💰 Detecção de Vendas Inteligente**: Algoritmo híbrido que cruza dados de listagem com eventos de venda (`sales/add`) para confirmar vendas reais e evitar falsos positivos.
+- **🛡️ Proteção contra Undercut**: Notifica imediatamente quando alguém lista um item por um preço menor que o seu.
+  - *Lógica Inteligente*: Diferencia itens HQ (High Quality) de NQ, garantindo que você só seja notificado por competidores diretos.
+- **📦 Gestão de Estoque**: Sincronização automática da quantidade de itens listados.
+- **🔍 Autocomplete**: Integração com a base de dados do Teamcraft para busca rápida de itens e servidores.
+- **👥 Múltiplos Retainers**: Suporte completo para monitorar vários retainers simultaneamente.
 
-**Exemplo:** `/notify item-id:Savage Aim Materia X retainer:MeuRetainer home-server:Behemoth`
+## 🏗 Arquitetura
 
-### `/cancel-notification`
-Cancela uma notificação específica.
+O projeto é construído sobre uma arquitetura orientada a eventos:
 
-**Parâmetros:**
-- `item-id`: ID do item para cancelar
-- `retainer`: Nome do retainer
+1.  **Core**: Node.js com `discord.js` v14.
+2.  **Dados**: MongoDB (via Mongoose) para persistência de preferências e estado dos usuários.
+3.  **Comunicação Externa**:
+    *   **WebSocket (`wss://universalis.app/api/ws`)**: Para fluxo de dados em tempo real (Listagens e Vendas).
+    *   **REST API**: Para sincronização de estado inicial (Snapshot) e recuperação de falhas.
+4.  **Resiliência**: Sistema de *Heartbeat* para manutenção de conexão e reconexão automática.
 
-### `/list-notifications`
-Lista todas as suas notificações ativas em um painel organizado.
+## 📦 Pré-requisitos
 
-### `/register-retainer`
-Registra um novo retainer.
+Antes de começar, certifique-se de ter instalado:
 
-**Parâmetros:**
-- `retainer`: Nome do retainer a ser registrado
+*   [Node.js](https://nodejs.org/) (v16.9.0 ou superior)
+*   [MongoDB](https://www.mongodb.com/) (Local ou Atlas)
+*   Uma aplicação criada no [Discord Developer Portal](https://discord.com/developers/applications)
 
-## 🛠️ Configuração e Instalação
+## 🔧 Instalação
 
-### Pré-requisitos
+1.  **Clone o repositório:**
+    ```bash
+    git clone https://github.com/RafaelAlvesDS/FFXIV-Market-Board-Notifications.git
+    cd FFXIV-Market-Board-Notifications
+    ```
 
-- Node.js 16.0.0 ou superior
-- MongoDB
-- Token do bot do Discord
-- Conexão com a API do Universalis
+2.  **Instale as dependências:**
+    ```bash
+    npm install
+    ```
 
-### Instalação
+3.  **Configure as variáveis de ambiente:**
+    Renomeie o arquivo `.env.example` para `.env` (ou crie um novo) e preencha:
+    ```env
+    DISCORD_TOKEN=seu_token_do_bot_aqui
+    MONGODB_URI=mongodb://localhost:27017/ffxiv-market-bot
+    CLIENT_ID=seu_client_id_do_discord
+    GUILD_ID=id_do_servidor_de_teste (opcional)
+    ```
 
-1. **Clone o repositório:**
-```bash
-git clone https://github.com/RafaelAlvesDS/FFXIV-Market-Board-Notifications.git
-cd FFXIV-Market-Board-Notifications
-```
+4.  **Registre os comandos Slash:**
+    ```bash
+    node deploy-commands.js
+    ```
 
-2. **Instale as dependências:**
-```bash
-npm install
-```
+5.  **Inicie o bot:**
+    ```bash
+    npm start
+    ```
 
-3. **Configure as variáveis de ambiente:**
-Crie um arquivo `.env` na raiz do projeto:
-```env
-DISCORD_TOKEN=seu_token_do_discord_aqui
-MONGODB_URI=sua_string_de_conexao_mongodb_aqui
-```
+## ⚙️ Configuração
 
-4. **Configure o banco de dados:**
-Certifique-se de que o MongoDB está rodando e acessível através da URI configurada.
+O bot baixa automaticamente a base de dados de itens do [FFXIV Teamcraft](https://github.com/ffxiv-teamcraft/ffxiv-teamcraft) na primeira inicialização.
 
-5. **Deploy dos comandos:**
-```bash
-node deploy-commands.js
-```
-
-6. **Inicie o bot:**
-```bash
-node index.js
-```
-ou use o arquivo batch:
-```bash
-"RUN BOT.bat"
-```
-
-### Atualização Manual dos Dados de Itens
-
-Para atualizar manualmente a base de dados de itens:
+Para forçar uma atualização manual dos itens:
 ```bash
 node update-items.js
 ```
 
-> **Nota**: Os dados de itens são baixados automaticamente quando o bot inicia. O comando acima é apenas para atualizações manuais.
+## 🎮 Uso
 
-### Estrutura do Projeto
+1.  Convide o bot para o seu servidor.
+2.  Registre o nome do seu Retainer (vendedor no jogo).
+3.  Adicione notificações para os itens que deseja monitorar.
+
+### Comandos
+
+| Comando | Descrição | Exemplo |
+|---------|-----------|---------|
+| `/register-retainer` | Registra um retainer para o seu usuário. | `/register-retainer retainer:MyRetainer` |
+| `/notify` | Cria um alerta de preço para um item. | `/notify item-id:Potion home-server:Behemoth retainer:MyRetainer` |
+| `/list-notifications` | Exibe um painel com todos os seus alertas ativos. | `/list-notifications` |
+| `/cancel-notification` | Remove o monitoramento de um item. | `/cancel-notification item-id:Potion retainer:MyRetainer` |
+
+## 📂 Estrutura do Projeto
 
 ```
-├── commands/
-│   ├── fun/                    # Comandos de diversão
-│   └── utility/                # Comandos utilitários
-│       ├── notify.js          # Comando principal de notificação
-│       ├── cancel-notification.js
-│       ├── list-notifications.js
-│       └── register-retainer.js
-├── events/
-│   ├── interactionCreate.js   # Manipula interações
-│   └── ready.js              # Lógica de monitoramento (WebSocket + REST)
-├── schemas/
-│   ├── notification.js       # Schema das notificações
-│   ├── retainers.js         # Schema dos retainers
-│   └── listing.js           # Schema das listagens
-├── config.json              # Configurações do bot
-├── itemsManager.js          # Gerenciador da base de dados de itens
-├── socketManager.js         # Gerenciador de conexão WebSocket
-├── worldsManager.js         # Gerenciador de IDs de mundos
-├── items.json              # Cache local dos dados de itens
-├── update-items.js         # Script para atualização manual dos itens
-└── package.json
+.
+├── commands/           # Comandos Slash (Discord)
+│   └── utility/        # Lógica dos comandos (notify, list, etc.)
+├── events/             # Event Handlers
+│   ├── interactionCreate.js # Processamento de comandos
+│   └── ready.js        # Inicialização e Lógica WebSocket
+├── schemas/            # Modelos do Mongoose (MongoDB)
+├── itemsManager.js     # Gerenciamento de cache de itens (JSON)
+├── socketManager.js    # Cliente WebSocket e Heartbeat
+├── worldsManager.js    # Mapeamento de IDs de Mundos
+├── index.js            # Ponto de entrada da aplicação
+└── deploy-commands.js  # Script de registro de comandos
 ```
 
-## 🔧 Dependências
+## 🤝 Contribuição
 
-### Principais
-- **discord.js** (^14.13.0): Biblioteca principal para interação com o Discord
-- **mongoose** (^7.4.4): ODM para MongoDB
-- **axios** (^1.4.0): Cliente HTTP para requisições à API
-- **ws** (^8.x): Cliente WebSocket para atualizações em tempo real
-- **bson** (^6.x): Deserialização de dados binários do WebSocket
-- **dotenv** (^16.3.1): Carregamento de variáveis de ambiente
+Contribuições são bem-vindas! Por favor, siga estes passos:
 
-### Desenvolvimento
-- **eslint** (^8.47.0): Linting do código
+1.  Faça um Fork do projeto.
+2.  Crie uma Branch para sua Feature (`git checkout -b feature/NovaFeature`).
+3.  Commit suas mudanças (`git commit -m 'Adiciona NovaFeature'`).
+4.  Push para a Branch (`git push origin feature/NovaFeature`).
+5.  Abra um Pull Request.
 
-## 📊 Funcionamento
+### Padrões de Código
 
-1. **Inicialização**: 
-   - Baixa a base de dados de itens do [Teamcraft](https://github.com/ffxiv-teamcraft/ffxiv-teamcraft).
-   - Carrega a lista de mundos do Universalis.
-   - Conecta ao WebSocket do Universalis.
-   - Sincroniza o estado inicial das notificações via REST API (Snapshot).
-2. **Registro**: Usuários registram seus retainers usando `/register-retainer`.
-3. **Configuração**: Usuários configuram notificações com `/notify`.
-4. **Monitoramento**: O bot recebe eventos `listings/add` em tempo real via WebSocket.
-5. **Notificações**: O bot envia mensagens quando:
-   - Alguém lista um item mais barato (Undercut).
-   - Um item é vendido (baseado na redução do estoque).
-   - Novos itens são adicionados ao mercado.
-
-## 🌐 APIs Externas
-
-Este bot utiliza as seguintes APIs:
-
-### Universalis API
-- **WebSocket**: `wss://universalis.app/api/ws` (Updates em tempo real)
-- **REST**: `https://universalis.app/api/v2/{servidor}/{itemID}` (Sincronização inicial)
-
-### Teamcraft
-Para obter a base de dados de itens atualizada:
-```
-https://raw.githubusercontent.com/ffxiv-teamcraft/ffxiv-teamcraft/master/libs/data/src/lib/json/items.json
-```
-
-## 📝 Schemas do Banco de Dados
-
-### Notification
-```javascript
-{
-    userID: String,      // ID do usuário do Discord
-    channelID: String,   // ID do canal para notificações
-    itemID: String,      // ID do item no jogo
-    homeServer: String,  // Servidor do usuário
-    retainer: String,    // Nome do retainer
-    notified: Boolean,   // Status da notificação
-    listings: Number     // Número atual de listagens
-}
-```
-
-### Retainer
-```javascript
-{
-    userID: String,      // ID do usuário do Discord
-    retainerName: String // Nome do retainer
-}
-```
-
-## 🤝 Contribuindo
-
-1. Faça um fork do projeto
-2. Crie uma branch para sua feature (`git checkout -b feature/AmazingFeature`)
-3. Commit suas mudanças (`git commit -m 'Add some AmazingFeature'`)
-4. Push para a branch (`git push origin feature/AmazingFeature`)
-5. Abra um Pull Request
+*   Utilizamos **ESLint** para manter a qualidade do código.
+*   Siga o estilo de código assíncrono (`async/await`) preferencialmente.
+*   Mantenha a lógica de negócios separada dos arquivos de visualização (comandos).
 
 ## 📄 Licença
 
-Este projeto está licenciado sob a Licença ISC - veja o arquivo [LICENSE](LICENSE) para detalhes.
-
-## 👤 Autor
-
-**FaelRocker**
-- GitHub: [@RafaelAlvesDS](https://github.com/RafaelAlvesDS)
-
-## 🐛 Reportar Bugs
-
-Se você encontrar algum bug, por favor abra uma [issue](https://github.com/RafaelAlvesDS/FFXIV-Market-Board-Notifications/issues) no GitHub.
-
-## 📈 Status do Projeto
-
-Este projeto está em desenvolvimento ativo. Novas funcionalidades e melhorias são adicionadas regularmente.
+Este projeto está licenciado sob a licença ISC. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
 
 ---
 
-⭐ Se este projeto te ajudou, considere dar uma estrela no repositório!
+**Aviso Legal**: Este projeto não é afiliado à Square Enix. "Final Fantasy XIV" é uma marca registrada da Square Enix Co., Ltd.

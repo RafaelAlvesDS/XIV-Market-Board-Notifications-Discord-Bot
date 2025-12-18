@@ -5,6 +5,14 @@ module.exports = {
 	async execute(interaction) {
 		if (!interaction.isChatInputCommand() && !interaction.isAutocomplete()) return;
 
+        // Verificar se a interação já expirou (3 segundos)
+        const now = Date.now();
+        const created = interaction.createdTimestamp;
+        if (now - created > 2500) {
+            console.warn(`[Interaction] ${interaction.commandName} ignorada por timeout (${now - created}ms).`);
+            return;
+        }
+
 		if (interaction.isChatInputCommand()) {
 			// command handling
 			const command = interaction.client.commands.get(interaction.commandName);

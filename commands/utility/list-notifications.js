@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder, MessageFlags } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const notificationSchema = require('../../schemas/notification');
 const itemsManager = require('../../itemsManager');
 
@@ -7,8 +7,17 @@ module.exports = {
 		.setName('list-notifications')
 		.setDescription('List your notifications.'),
 	async execute(interaction) {
-        // Deferir a resposta para evitar timeout (Unknown interaction)
-        await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+        // Tenta deferir a resposta. Se falhar, loga e continua tentando editar (caso tenha funcionado mas retornado erro)
+        try {
+            await interaction.deferReply({ ephemeral: true });
+        } catch (error) {
+            if (error.code === 10062 || error.code === 40060) {
+                // Interação desconhecida ou já respondida - abortar silenciosamente ou logar aviso
+                console.warn(`[ListNotifications] Interação perdida ou já respondida: ${error.code}`);
+                return;
+            }
+            console.error('Erro ao deferir (tentando continuar):', error.message);
+        }
 
         try {
             const data = await notificationSchema.find({
@@ -57,8 +66,13 @@ module.exports = {
             await interaction.editReply({ embeds: [embed] });
 
         } catch (error) {
-            console.error(error);
-            await interaction.editReply({ content: 'Ocorreu um erro ao buscar suas notificações.' });
+            console.error('Erro ao processar/editar resposta:', error);
+            // Tenta enviar uma mensagem nova se editar falhar
+            try {
+                await interaction.followUp({ content: 'Ocorreu um erro ao listar suas notificações.', ephemeral: true });
+            } catch (e) {
+                console.error('Erro final ao enviar mensagem:', e.message);
+            }
         }
 	},
 };
