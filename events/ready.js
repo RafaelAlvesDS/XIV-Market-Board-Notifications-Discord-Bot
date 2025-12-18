@@ -3,7 +3,7 @@ const notificationSchema = require('../schemas/notification');
 const worldsManager = require('../worldsManager');
 const socketManager = require('../socketManager');
 const itemsManager = require('../itemsManager');
-const axios = require('axios');
+const apiClient = require('../apiClient');
 
 module.exports = {
     name: Events.ClientReady,
@@ -53,7 +53,8 @@ module.exports = {
                 // 3.2 Sincronizar estado inicial via REST (Snapshot) (apenas uma vez por item/mundo)
                 try {
                     const apiUrl = `https://universalis.app/api/v2/${firstNotif.homeServer}/${firstNotif.itemID}`;
-                    const response = await axios.get(apiUrl);
+                    // Usando apiClient para respeitar o rate limit
+                    const response = await apiClient.get(apiUrl);
                     const listings = response.data.listings || [];
                     
                     // Atualizar cada notificação do grupo individualmente
@@ -68,6 +69,8 @@ module.exports = {
                 } catch (error) {
                     console.error(`Erro ao sincronizar inicialização para item ${firstNotif.itemID}:`, error.message);
                 }
+
+                // O apiClient já gerencia o rate limit, não precisamos mais do delay manual aqui.
 
             } else {
                 console.warn(`Mundo não encontrado para notificação: ${firstNotif.homeServer}`);
@@ -105,35 +108,43 @@ module.exports = {
                         listing.retainerName && listing.retainerName.includes(dataItem.retainer)
                     );
 
-                    // Lógica de Venda com Verificação via WebSocket Sales (Sem REST)
+                    // Lógica de Venda Híbrida (WS Trigger -> REST Check)
                     if (matchingListings.length < dataItem.listings) {
-                        // Aguarda um pouco para garantir que o evento de venda (sales/add) tenha chegado
-                        // pois listings/add e sales/add podem chegar em ordens variadas
-                        setTimeout(async () => {
-                            const key = `${message.world}-${message.item}`;
-                            const lastSaleTime = lastSaleArrival.get(key) || 0;
-                            const timeDiff = Date.now() - lastSaleTime;
+                        // Se a quantidade diminuiu, verificamos o histórico oficial via REST
+                        // Isso evita falsos positivos (ex: cancelamento manual) e garante precisão
+                        try {
+                            // Pequeno delay para garantir que o servidor processou a venda e a API atualizou
+                            await new Promise(resolve => setTimeout(resolve, 2000));
 
-                            // Se recebemos um evento de venda nos últimos 30 segundos para este item/mundo
-                            if (timeDiff < 30000) {
+                            const historyUrl = `https://universalis.app/api/v2/history/${dataItem.homeServer}/${dataItem.itemID}?entries=5`;
+                            // Usando apiClient para respeitar o rate limit
+                            const historyResponse = await apiClient.get(historyUrl);
+                            const recentSales = historyResponse.data.entries || [];
+
+                            // Verifica se houve alguma venda nos últimos 90 segundos (margem de segurança)
+                            const now = Date.now() / 1000; // Universalis usa timestamp em segundos
+                            const soldRecently = recentSales.some(sale => (now - sale.timestamp) < 90);
+
+                            if (soldRecently) {
                                 channel.send({ content: `<@${dataItem.userID}> Um item foi vendido no mercado! 💰\nItem: https://universalis.app/market/${dataItem.itemID}` });
-                                
-                                // Atualiza o banco com a nova quantidade
-                                await notificationSchema.updateOne(
-                                    { _id: dataItem._id },
-                                    { $set: { listings: matchingListings.length } }
-                                );
                             } else {
-                                // Se a quantidade diminuiu mas NÃO houve evento de venda recente:
-                                // Pode ser cancelamento, expiração ou upload parcial.
-                                // Atualizamos o banco silenciosamente para manter a sincronia, mas NÃO notificamos venda.
-                                // console.log(`Item removido sem venda confirmada (Diff: ${timeDiff}ms). Atualizando silenciosamente.`);
-                                await notificationSchema.updateOne(
-                                    { _id: dataItem._id },
-                                    { $set: { listings: matchingListings.length } }
-                                );
+                                // console.log(`Item ${dataItem.itemID} removido, mas nenhuma venda recente encontrada no histórico.`);
                             }
-                        }, 2000); // Delay de 2 segundos
+
+                            // Atualiza o banco com a nova quantidade
+                            await notificationSchema.updateOne(
+                                { _id: dataItem._id },
+                                { $set: { listings: matchingListings.length } }
+                            );
+
+                        } catch (error) {
+                            console.error(`Erro ao verificar histórico de vendas para ${dataItem.itemID}:`, error.message);
+                            // Em caso de erro na API, atualizamos a quantidade para manter a sincronia
+                            await notificationSchema.updateOne(
+                                { _id: dataItem._id },
+                                { $set: { listings: matchingListings.length } }
+                            );
+                        }
                     } else if (matchingListings.length > dataItem.listings) {
                         // Reposição de estoque
                         await notificationSchema.updateOne(
