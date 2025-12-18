@@ -47,8 +47,28 @@ module.exports = {
 									}
 								}
 
+								// Verifica se houve undercut (HQ vs HQ ou NQ vs Geral)
+								let isUndercut = false;
+								const userHQListings = matchingListings.filter(listing => listing.hq);
+								const userNQListings = matchingListings.filter(listing => !listing.hq);
+
+								// Se o usuário vende HQ, compara apenas com outros HQ
+								if (userHQListings.length > 0) {
+									const globalHQListings = responseData.listings.filter(listing => listing.hq);
+									if (globalHQListings.length > 0 && globalHQListings[0].pricePerUnit < userHQListings[0].pricePerUnit) {
+										isUndercut = true;
+									}
+								}
+
+								// Se o usuário vende NQ, compara com o mais barato geral (qualquer qualidade mais barata rouba a venda)
+								if (userNQListings.length > 0) {
+									if (responseData.listings.length > 0 && responseData.listings[0].pricePerUnit < userNQListings[0].pricePerUnit) {
+										isUndercut = true;
+									}
+								}
+
 								// avisa o usuario que alguem cobriu o preço dele no mercado
-								if (responseData.listings[0].retainerName != dataItem.retainer && dataItem.notified == false && matchingListings.length > 0) {
+								if (isUndercut && dataItem.notified == false && matchingListings.length > 0) {
 									channel.send({ content: '<@' + dataItem.userID + '> Anunciaram mais barato que você o item: https://universalis.app/market/' + dataItem.itemID });
 									try {
 										await notificationSchema.updateOne({ itemID: dataItem.itemID, retainer: dataItem.retainer }, { $set: { notified: true } });
@@ -58,7 +78,7 @@ module.exports = {
 									}
 								}
 								// atualiza status de notificado quando o item do usuario for o mais barato
-								if (responseData.listings[0].retainerName == dataItem.retainer && dataItem.notified == true) {
+								if (!isUndercut && dataItem.notified == true) {
 									try {
 										await notificationSchema.updateOne({ itemID: dataItem.itemID, retainer: dataItem.retainer }, { $set: { notified: false } });
 									}
