@@ -2,6 +2,9 @@ const { SlashCommandBuilder } = require('discord.js');
 const notificationSchema = require('../../schemas/notification');
 const retainerSchema = require('../../schemas/retainers');
 const itemsManager = require('../../itemsManager');
+const worldsManager = require('../../worldsManager');
+const socketManager = require('../../socketManager');
+const axios = require('axios');
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -67,15 +70,35 @@ module.exports = {
             });
 
             if (!data) {
-                notificationSchema.create({
+                // Buscar estado inicial via REST para não começar zerado
+                let initialListings = 0;
+                try {
+                    const apiUrl = `https://universalis.app/api/v2/${homeServer}/${itemID}`;
+                    const response = await axios.get(apiUrl);
+                    const listings = response.data.listings || [];
+                    const matching = listings.filter(l => l.retainerName && l.retainerName.includes(retainer));
+                    initialListings = matching.length;
+                } catch (e) {
+                    console.error('Erro ao buscar listings iniciais:', e.message);
+                }
+
+                await notificationSchema.create({
                     userID : interaction.user.id,
                     channelID: interaction.channel.id,
                     itemID: itemID,
                     homeServer: homeServer,
                     retainer: retainer,
                     notified: false,
-                    listings: 0,
+                    listings: initialListings,
                 });
+
+                // Inscrever no WebSocket
+                const worldId = worldsManager.getIdByName(homeServer);
+                if (worldId) {
+                    const channel = `listings/add{item=${itemID},world=${worldId}}`;
+                    socketManager.subscribe(channel);
+                }
+
                 await interaction.reply('Tá salvo!');
             }
             if (data) {

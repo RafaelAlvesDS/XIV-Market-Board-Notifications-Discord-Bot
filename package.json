@@ -12,7 +12,7 @@
     "url": "git+https://github.com/RafaelAlvesDS/FFXIV-Market-Board-Notifications.git"
   },
   "keywords": [
-  "XIV Marketboard"
+    "XIV Marketboard"
   ],
   "author": "FaelRocker",
   "license": "ISC",
@@ -22,9 +22,11 @@
   "homepage": "https://github.com/RafaelAlvesDS/FFXIV-Market-Board-Notifications#readme",
   "dependencies": {
     "axios": "^1.4.0",
+    "bson": "^7.0.0",
     "discord.js": "^14.13.0",
     "dotenv": "^16.3.1",
-    "mongoose": "^7.4.4"
+    "mongoose": "^7.4.4",
+    "ws": "^8.18.3"
   },
   "devDependencies": {
     "eslint": "^8.47.0"

@@ -1,15 +1,18 @@
 # XIV Market Board Discord Bot
 
-Um bot do Discord para notificações do Market Board do XIV. Este bot monitora preços de itens no Market Board e notifica os usuários quando alguém oferece um preço mais baixo que o seu ou quando seus itens são vendidos.
+Um bot do Discord para notificações do Market Board do XIV. Este bot monitora preços de itens no Market Board e notifica os usuários em tempo real quando alguém oferece um preço mais baixo que o seu ou quando seus itens são vendidos.
 
 ## 🎯 Funcionalidades
 
-- **Notificações de Preços**: Receba alertas quando alguém colocar um item mais barato que o seu
-- **Notificações de Vendas**: Seja notificado quando seus itens forem vendidos
-- **Autocompletar**: Interface amigável com autocompletar para itens, servidores e retainers
-- **Múltiplos Retainers**: Suporte para múltiplos retainers por usuário
-- **Monitoramento Automático**: Verificação automática a cada 5 minutos
-- **Dados Atualizados**: Downloads automáticos da base de dados de itens mais recente do Teamcraft
+- **Notificações em Tempo Real**: Receba alertas instantâneos via WebSocket quando alguém colocar um item mais barato que o seu.
+- **Notificações de Vendas**: Seja notificado quando seus itens forem vendidos.
+- **Autocompletar**: Interface amigável com autocompletar para itens, servidores e retainers.
+- **Múltiplos Retainers**: Suporte para múltiplos retainers por usuário.
+- **Monitoramento Inteligente**: 
+  - Diferencia itens HQ (High Quality) de NQ (Normal Quality).
+  - Evita notificações duplicadas.
+  - Sincronização automática de estoque.
+- **Dados Atualizados**: Downloads automáticos da base de dados de itens mais recente do Teamcraft.
 
 ## 📋 Comandos Disponíveis
 
@@ -31,7 +34,7 @@ Cancela uma notificação específica.
 - `retainer`: Nome do retainer
 
 ### `/list-notifications`
-Lista todas as suas notificações ativas.
+Lista todas as suas notificações ativas em um painel organizado.
 
 ### `/register-retainer`
 Registra um novo retainer.
@@ -106,13 +109,15 @@ node update-items.js
 │       └── register-retainer.js
 ├── events/
 │   ├── interactionCreate.js   # Manipula interações
-│   └── ready.js              # Lógica de monitoramento
+│   └── ready.js              # Lógica de monitoramento (WebSocket + REST)
 ├── schemas/
 │   ├── notification.js       # Schema das notificações
 │   ├── retainers.js         # Schema dos retainers
 │   └── listing.js           # Schema das listagens
 ├── config.json              # Configurações do bot
 ├── itemsManager.js          # Gerenciador da base de dados de itens
+├── socketManager.js         # Gerenciador de conexão WebSocket
+├── worldsManager.js         # Gerenciador de IDs de mundos
 ├── items.json              # Cache local dos dados de itens
 ├── update-items.js         # Script para atualização manual dos itens
 └── package.json
@@ -124,6 +129,8 @@ node update-items.js
 - **discord.js** (^14.13.0): Biblioteca principal para interação com o Discord
 - **mongoose** (^7.4.4): ODM para MongoDB
 - **axios** (^1.4.0): Cliente HTTP para requisições à API
+- **ws** (^8.x): Cliente WebSocket para atualizações em tempo real
+- **bson** (^6.x): Deserialização de dados binários do WebSocket
 - **dotenv** (^16.3.1): Carregamento de variáveis de ambiente
 
 ### Desenvolvimento
@@ -131,24 +138,26 @@ node update-items.js
 
 ## 📊 Funcionamento
 
-1. **Inicialização**: O bot baixa automaticamente a base de dados de itens mais recente do [Teamcraft](https://github.com/ffxiv-teamcraft/ffxiv-teamcraft)
-2. **Registro**: Usuários registram seus retainers usando `/register-retainer`
-3. **Configuração**: Usuários configuram notificações com `/notify`
-4. **Monitoramento**: O bot verifica a API do Universalis a cada 5 minutos
+1. **Inicialização**: 
+   - Baixa a base de dados de itens do [Teamcraft](https://github.com/ffxiv-teamcraft/ffxiv-teamcraft).
+   - Carrega a lista de mundos do Universalis.
+   - Conecta ao WebSocket do Universalis.
+   - Sincroniza o estado inicial das notificações via REST API (Snapshot).
+2. **Registro**: Usuários registram seus retainers usando `/register-retainer`.
+3. **Configuração**: Usuários configuram notificações com `/notify`.
+4. **Monitoramento**: O bot recebe eventos `listings/add` em tempo real via WebSocket.
 5. **Notificações**: O bot envia mensagens quando:
-   - Alguém lista um item mais barato
-   - Um item é vendido
-   - Novos itens são adicionados ao mercado
+   - Alguém lista um item mais barato (Undercut).
+   - Um item é vendido (baseado na redução do estoque).
+   - Novos itens são adicionados ao mercado.
 
 ## 🌐 APIs Externas
 
 Este bot utiliza as seguintes APIs:
 
 ### Universalis API
-Para obter dados do Market Board do XIV market:
-```
-https://universalis.app/api/v2/{servidor}/{itemID}?&entries=0&noGst=1
-```
+- **WebSocket**: `wss://universalis.app/api/ws` (Updates em tempo real)
+- **REST**: `https://universalis.app/api/v2/{servidor}/{itemID}` (Sincronização inicial)
 
 ### Teamcraft
 Para obter a base de dados de itens atualizada:
