@@ -45,9 +45,8 @@ class NotificationService {
         if (trackers.length === 0) return;
 
         if (message.event.includes('listings/add') && listings) {
-            for (const listing of listings) {
-                await this.handleListings(trackers, listing, world);
-            }
+            // Processa todas as listagens de uma vez para evitar spam de notificações
+            await this.handleListings(trackers, listings, world);
         } else if (message.event.includes('sales/add') && sales) {
             for (const sale of sales) {
                 await this.handleSales(trackers, sale, world);
@@ -77,27 +76,38 @@ class NotificationService {
         }
     }
 
-    async handleListings(trackers, listing, worldId) {
+    async handleListings(trackers, listings, worldId) {
         for (const tracker of trackers) {
-            // Se for o próprio retainer do usuário atualizando
-            if (listing.retainerName === tracker.retainerName) {
-                tracker.lastKnownPrice = listing.pricePerUnit;
-                tracker.lastKnownQuantity = listing.quantity;
-                tracker.listingID = listing.listingID; // Atualiza listingID se mudar
-                // Se o usuário atualizou o preço, assumimos que ele corrigiu o undercut
+            // 1. Verificar se o usuário atualizou seu próprio listing
+            // Se houver múltiplas entradas do usuário (raro), pegamos a última
+            const userListings = listings.filter(l => l.retainerName === tracker.retainerName);
+            
+            if (userListings.length > 0) {
+                const latestUserListing = userListings[userListings.length - 1];
+                tracker.lastKnownPrice = latestUserListing.pricePerUnit;
+                tracker.lastKnownQuantity = latestUserListing.quantity;
+                tracker.listingID = latestUserListing.listingID; 
                 tracker.isUndercut = false;
                 await tracker.save();
-                continue;
             }
 
             // Se o usuário não tem listingID (não está listado), ignora undercuts
             if (!tracker.listingID) continue;
 
-            // Lógica HQ: Se o usuário vende HQ, só importa se o undercut for HQ
-            if (tracker.isHQ && !listing.hq) continue;
+            // 2. Verificar Undercuts
+            // Filtra listings que não são do usuário e que são mais baratos
+            const undercuts = listings.filter(l => {
+                if (l.retainerName === tracker.retainerName) return false;
+                if (tracker.isHQ && !l.hq) return false; // Se usuário é HQ, ignora NQ
+                return l.pricePerUnit < tracker.lastKnownPrice;
+            });
 
-            // Lógica de Undercut: Preço menor que o registrado pelo usuário
-            if (listing.pricePerUnit < tracker.lastKnownPrice) {
+            if (undercuts.length > 0) {
+                // Pega o menor preço entre os undercuts para notificar
+                const bestUndercut = undercuts.reduce((prev, curr) => 
+                    prev.pricePerUnit < curr.pricePerUnit ? prev : curr
+                );
+
                 // Atualiza status de undercut
                 if (!tracker.isUndercut) {
                     tracker.isUndercut = true;
@@ -110,10 +120,10 @@ class NotificationService {
                     fields: [
                         { name: 'Item', value: tracker.itemName, inline: true },
                         { name: 'Seu Preço', value: `${tracker.lastKnownPrice.toLocaleString()} gil`, inline: true },
-                        { name: 'Novo Preço', value: `${listing.pricePerUnit.toLocaleString()} gil`, inline: true },
-                        { name: 'Retainer Rival', value: listing.retainerName, inline: true },
+                        { name: 'Novo Preço', value: `${bestUndercut.pricePerUnit.toLocaleString()} gil`, inline: true },
+                        { name: 'Retainer Rival', value: bestUndercut.retainerName, inline: true },
                         { name: 'Mundo', value: tracker.homeServerName, inline: true },
-                        { name: 'Qualidade', value: listing.hq ? 'HQ' : 'NQ', inline: true }
+                        { name: 'Qualidade', value: bestUndercut.hq ? 'HQ' : 'NQ', inline: true }
                     ]
                 });
             }
