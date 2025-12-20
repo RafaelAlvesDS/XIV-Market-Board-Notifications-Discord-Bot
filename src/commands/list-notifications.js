@@ -17,16 +17,23 @@ module.exports = {
         }
 
         const embed = new EmbedBuilder()
-            .setTitle('📋 Itens Monitorados')
-            .setColor(0x0099FF);
+            .setTitle('� Painel de Monitoramento')
+            .setDescription(`Você está monitorando **${items.length}** itens.`)
+            .setColor(0x2B2D31)
+            .setTimestamp()
+            .setFooter({ text: 'FFXIV Market Bot', iconURL: interaction.client.user.displayAvatarURL() });
 
         items.forEach(item => {
-            const statusIcon = item.isUndercut ? '⚠️ **UNDERCUT**' : '✅ Menor Preço';
+            const status = item.isUndercut 
+                ? '🔴 **UNDERCUT DETECTADO**' 
+                : '🟢 **Melhor Preço**';
+            
+            const quality = item.isHQ ? '✨ HQ' : 'Normal';
             
             embed.addFields({
-                name: `${item.itemName} (${item.homeServerName})`,
-                value: `Status: ${statusIcon}\nRetainer: ${item.retainerName}\nPreço: ${item.lastKnownPrice.toLocaleString()} gil\nQtd: ${item.lastKnownQuantity}\nQualidade: ${item.isHQ ? 'HQ' : 'NQ'}`,
-                inline: true
+                name: `🔹 ${item.itemName}`,
+                value: `> 🌍 **${item.homeServerName}** | 👤 **${item.retainerName}**\n> 💰 **${item.lastKnownPrice.toLocaleString()} gil** (${quality})\n> 📦 Estoque: ${item.lastKnownQuantity}\n> ${status}`,
+                inline: false
             });
         });
 

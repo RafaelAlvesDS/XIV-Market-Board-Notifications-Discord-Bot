@@ -44,30 +44,35 @@ class NotificationService {
         const trackers = await TrackedItem.find({ itemId: item, homeServerId: world });
         if (trackers.length === 0) return;
 
-        if (message.event.includes('listings/add') && listings && listings.length > 0) {
-            this.handleListings(trackers, listings[0], world);
-        } else if (message.event.includes('sales/add') && sales && sales.length > 0) {
-            this.handleSales(trackers, sales[0], world);
-        } else if (message.event.includes('listings/remove') && listings && listings.length > 0) {
-            this.handleListingsRemove(trackers, listings[0], world);
+        if (message.event.includes('listings/add') && listings) {
+            for (const listing of listings) {
+                await this.handleListings(trackers, listing, world);
+            }
+        } else if (message.event.includes('sales/add') && sales) {
+            for (const sale of sales) {
+                await this.handleSales(trackers, sale, world);
+            }
+        } else if (message.event.includes('listings/remove') && listings) {
+            for (const listing of listings) {
+                await this.handleListingsRemove(trackers, listing, world);
+            }
         }
     }
 
     async handleListingsRemove(trackers, listing, worldId) {
         for (const tracker of trackers) {
-            // Se o listingID removido for o do usuário
-            if (listing.listingID === tracker.listingID) {
+            // Se o listingID removido for o do usuário OU o nome do retainer for o do usuário
+            // Isso garante que detectamos a remoção mesmo se o listingID tiver mudado (ex: update perdido)
+            if (listing.listingID === tracker.listingID || listing.retainerName === tracker.retainerName) {
                 // Não removemos o item do banco, pois o usuário pode estar apenas ajustando o preço.
                 // O monitoramento continua ativo com o último preço conhecido.
                 
-                this.sendNotification(tracker.userId, {
-                    title: '⚠️ Listagem Removida',
-                    color: 0xFFA500,
-                    fields: [
-                        { name: 'Item', value: tracker.itemName, inline: true },
-                        { name: 'Status', value: 'Item saiu do Market Board. Monitoramento mantido (aguardando reposição ou ajuste).', inline: false }
-                    ]
-                });
+                // ATUALIZAÇÃO: Marcamos como não listado para evitar falsos positivos de undercut
+                tracker.listingID = null;
+                tracker.isUndercut = false;
+                await tracker.save();
+
+                // Notificação removida a pedido do usuário (redução de spam)
             }
         }
     }
@@ -84,6 +89,9 @@ class NotificationService {
                 await tracker.save();
                 continue;
             }
+
+            // Se o usuário não tem listingID (não está listado), ignora undercuts
+            if (!tracker.listingID) continue;
 
             // Lógica HQ: Se o usuário vende HQ, só importa se o undercut for HQ
             if (tracker.isHQ && !listing.hq) continue;
