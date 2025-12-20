@@ -1,0 +1,85 @@
+openapi: 3.0.0
+info:
+  title: Universalis WebSocket API (Unofficial Docs)
+  description: Documentação das estruturas de dados e eventos do WebSocket do Universalis utilizada pelo bot.
+  version: 1.0.0
+servers:
+  - url: wss://universalis.app/api/ws
+    description: WebSocket Endpoint
+paths: {}
+components:
+  schemas:
+    SubscribeMessage:
+      type: object
+      properties:
+        event:
+          type: string
+          enum: [subscribe, unsubscribe]
+        channel:
+          type: string
+          description: "Nome do canal, opcionalmente com filtros. Ex: listings/add{world=73}"
+    
+    WebSocketMessage:
+      type: object
+      properties:
+        event:
+          type: string
+          enum: [listings/add, listings/remove, sales/add, sales/remove]
+        item:
+          type: integer
+          description: ID do Item
+        world:
+          type: integer
+          description: ID do Mundo
+        listings:
+          type: array
+          items:
+            $ref: '#/components/schemas/Listing'
+        sales:
+          type: array
+          items:
+            $ref: '#/components/schemas/Sale'
+
+    Listing:
+      type: object
+      properties:
+        listingID:
+          type: string
+        hq:
+          type: boolean
+        pricePerUnit:
+          type: integer
+        quantity:
+          type: integer
+        retainerName:
+          type: string
+        retainerID:
+          type: string
+        creatorName:
+          type: string
+        onMannequin:
+          type: boolean
+        lastReviewTime:
+          type: number
+        stainID:
+          type: integer
+        total:
+          type: integer
+
+    Sale:
+      type: object
+      properties:
+        hq:
+          type: boolean
+        pricePerUnit:
+          type: integer
+        quantity:
+          type: integer
+        timestamp:
+          type: number
+        onMannequin:
+          type: boolean
+        buyerName:
+          type: string
+        total:
+          type: integer
