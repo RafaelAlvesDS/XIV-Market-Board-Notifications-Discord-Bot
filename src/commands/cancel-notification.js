@@ -1,4 +1,5 @@
 const { SlashCommandBuilder } = require('discord.js');
+const mongoose = require('mongoose');
 const TrackedItem = require('../models/TrackedItem');
 const { ensureUserHasRetainer } = require('../utils/middleware');
 
@@ -32,6 +33,10 @@ module.exports = {
         if (!user) return;
 
         const trackingId = interaction.options.getString('item-select');
+
+        if (!mongoose.isValidObjectId(trackingId)) {
+            return interaction.reply({ content: '❌ ID de rastreamento inválido.', ephemeral: true });
+        }
 
         try {
             const result = await TrackedItem.findOneAndDelete({ _id: trackingId, userId: interaction.user.id });

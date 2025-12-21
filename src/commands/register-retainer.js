@@ -29,6 +29,15 @@ module.exports = {
         const serverId = parseInt(interaction.options.getString('home-server'));
         const discordId = interaction.user.id;
 
+        // Validação de segurança do nome do Retainer (evitar caracteres especiais e nomes muito longos)
+        const nameRegex = /^[a-zA-Z0-9' -]{2,20}$/;
+        if (!nameRegex.test(retainerName)) {
+            return interaction.reply({ 
+                content: 'Nome de retainer inválido. Use apenas letras, números, espaços, apóstrofos e hífens (2-20 caracteres).', 
+                ephemeral: true 
+            });
+        }
+
         if (isNaN(serverId)) {
             return interaction.reply({ content: 'Servidor inválido. Use as sugestões do autocomplete.', ephemeral: true });
         }
