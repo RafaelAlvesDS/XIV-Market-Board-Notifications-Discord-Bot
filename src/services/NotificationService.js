@@ -112,20 +112,20 @@ class NotificationService {
                 if (!tracker.isUndercut) {
                     tracker.isUndercut = true;
                     await tracker.save();
-                }
 
-                this.sendNotification(tracker.userId, {
-                    title: '⚠️ Undercut Detectado!',
-                    color: 0xFF0000,
-                    fields: [
-                        { name: 'Item', value: tracker.itemName, inline: true },
-                        { name: 'Seu Preço', value: `${tracker.lastKnownPrice.toLocaleString()} gil`, inline: true },
-                        { name: 'Novo Preço', value: `${bestUndercut.pricePerUnit.toLocaleString()} gil`, inline: true },
-                        { name: 'Retainer Rival', value: bestUndercut.retainerName, inline: true },
-                        { name: 'Mundo', value: tracker.homeServerName, inline: true },
-                        { name: 'Qualidade', value: bestUndercut.hq ? 'HQ' : 'NQ', inline: true }
-                    ]
-                });
+                    this.sendNotification(tracker.userId, {
+                        title: '⚠️ Undercut Detectado!',
+                        color: 0xFF0000,
+                        fields: [
+                            { name: 'Item', value: tracker.itemName, inline: true },
+                            { name: 'Seu Preço', value: `${tracker.lastKnownPrice.toLocaleString()} gil`, inline: true },
+                            { name: 'Novo Preço', value: `${bestUndercut.pricePerUnit.toLocaleString()} gil`, inline: true },
+                            { name: 'Retainer Rival', value: bestUndercut.retainerName, inline: true },
+                            { name: 'Mundo', value: tracker.homeServerName, inline: true },
+                            { name: 'Qualidade', value: bestUndercut.hq ? 'HQ' : 'NQ', inline: true }
+                        ]
+                    });
+                }
             }
         }
     }
