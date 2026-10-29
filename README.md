@@ -1,57 +1,44 @@
-# FFXIV Market Monitor Bot
+# XIV Market Board Notifications
 
-Bot de Discord para monitoramento de mercado do Final Fantasy XIV utilizando a API WebSocket do Universalis.
+Bot de Discord que avisa por DM quando alguém baixa o preço do seu item no Market Board do Final Fantasy XIV, ou quando o item vende. Os dados vêm do WebSocket do [Universalis](https://universalis.app), então o aviso chega em tempo real, sem ficar consultando a API.
 
-## Funcionalidades
+## O que ele faz
 
-*   **Monitoramento em Tempo Real:** Utiliza WebSocket para receber atualizações instantâneas de listagens e vendas.
-*   **Filtros Inteligentes:** Inscreve-se apenas nos canais dos mundos relevantes para economizar banda.
-*   **Detecção de Undercut:** Notifica via DM quando um concorrente posta um preço menor (considerando HQ/NQ).
-*   **Alerta de Vendas:** Notifica quando um item monitorado é vendido (baseado em match de preço/quantidade).
-*   **Slash Commands:** Interface amigável com Autocomplete para itens e mundos.
+- **Undercut.** Se outro vendedor lista o mesmo item por menos que você, ele manda DM com o menor preço. Se o seu item é HQ, listagens NQ são ignoradas.
+- **Venda.** Avisa quando uma venda bate com o preço e a quantidade da sua listagem.
+- **Só o que importa.** Assina os canais do Universalis apenas dos mundos que alguém está monitorando.
 
-## Pré-requisitos
+## Comandos
 
-*   Node.js v16.9.0 ou superior.
-*   MongoDB (local ou Atlas).
-*   Token de Bot do Discord.
+- `/register-retainer nome`: registra o nome do seu retainer. Precisa ser feito antes dos outros comandos.
+- `/notify item retainer servidor`: começa a monitorar um item. Item e mundo têm autocomplete.
+- `/list-notifications`: lista o que você está monitorando.
+- `/cancel-notification item`: para de monitorar.
 
-## Instalação
+## Rodar
 
-1.  Clone o repositório.
-2.  Instale as dependências:
-    ```bash
-    npm install
-    ```
-3.  Configure o arquivo `.env` (use `.env.example` como base):
-    ```env
-    DISCORD_TOKEN=seu_token_aqui
-    CLIENT_ID=seu_client_id_aqui
-    MONGODB_URI=mongodb://localhost:27017/ffxiv-market
-    ```
+Precisa de Node 16.9 ou mais novo, um MongoDB (local ou Atlas) e um bot criado no Discord Developer Portal.
 
-## Execução
-
-Para desenvolvimento (com auto-reload):
-```bash
-npm run dev
+```
+npm install
 ```
 
-Para produção:
-```bash
-npm start
+Crie um `.env`:
+
+```
+DISCORD_TOKEN=
+CLIENT_ID=
+MONGODB_URI=mongodb://localhost:27017/ffxiv-market
 ```
 
-## Comandos do Bot
+Depois `npm start`, ou `npm run dev` para reiniciar sozinho a cada alteração.
 
-*   `/register-retainer [name]`: Registra o nome do seu retainer. Obrigatório para usar os outros comandos.
-*   `/notify [item] [retainer] [server]`: Começa a monitorar um item.
-*   `/list-notifications`: Lista seus itens monitorados.
-*   `/cancel-notification [item]`: Para de monitorar um item.
+## Código
 
-## Arquitetura
-
-*   **src/services/UniversalisSocket.js**: Gerencia a conexão WebSocket e deserialização BSON.
-*   **src/services/NotificationService.js**: Processa as mensagens recebidas e decide quem notificar.
-*   **src/models**: Schemas do Mongoose (User, TrackedItem).
-*   **src/commands**: Implementação dos Slash Commands.
+- `src/services/UniversalisSocket.js`: conexão WebSocket e leitura das mensagens em BSON.
+- `src/services/NotificationService.js`: decide quem avisar a cada mensagem.
+- `src/services/ItemCache.js`: nomes de itens para o autocomplete.
+- `src/models/`: `User` e `TrackedItem`, com Mongoose.
+- `src/commands/`: os slash commands.
+- `swagger.yaml`: anotações do formato das mensagens do WebSocket do Universalis, que não tem documentação oficial.
+- `tests/security_check.js`: script que mede o custo da busca por nome com 40 mil itens falsos.
